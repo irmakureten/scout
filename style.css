@@ -94,6 +94,12 @@ h1 {
   font-weight: 700;
 }
 
+.title-text {
+  color: #ff8c00;
+  -webkit-text-fill-color: #ff8c00;
+  font-weight: 700;
+}
+
 h2 {
   font-size: 2rem;
   color: var(--text-primary);
@@ -326,25 +332,25 @@ textarea {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  background: linear-gradient(135deg, #ff8c00, #e67e00);
   color: white;
   box-shadow: var(--shadow-md);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-glow);
+  box-shadow: 0 0 20px rgba(255, 140, 0, 0.4);
 }
 
 .btn-secondary {
-  background: linear-gradient(135deg, var(--secondary), var(--secondary-dark));
+  background: linear-gradient(135deg, #fb923c, #f97316);
   color: white;
   box-shadow: var(--shadow-md);
 }
 
 .btn-secondary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 20px rgba(236, 72, 153, 0.3);
+  box-shadow: 0 0 20px rgba(251, 146, 60, 0.4);
 }
 
 .btn-accent {

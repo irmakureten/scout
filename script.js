@@ -43,18 +43,25 @@ class ScoutingData {
         const stats = {
             matchCount: matches.length,
             avgAutoFuel: 0,
+            avgAutoCycleTime: 0,
             avgTeleopFuel: 0,
+            avgTeleopCycleTime: 0,
+            avgTeleopFuelRate: 0,
             avgFuelCapacity: 0,
             avgAutoClimb: 0,
             avgEndgameClimb: 0,
             avgDefense: 0,
             totalPoints: 0,
-            shooterMechanisms: {}
+            shooterMechanisms: {},
+            hoodAdjustable: {}
         };
 
         matches.forEach(match => {
             stats.avgAutoFuel += match.autoFuelScored;
+            stats.avgAutoCycleTime += (parseFloat(match.autoCycleTime) || 0);
             stats.avgTeleopFuel += match.teleopFuelScored;
+            stats.avgTeleopCycleTime += (parseFloat(match.teleopCycleTime) || 0);
+            stats.avgTeleopFuelRate += (parseFloat(match.teleopFuelRate) || 0);
             stats.avgFuelCapacity += match.fuelCapacity;
             stats.avgAutoClimb += parseInt(match.autoTowerClimb);
             stats.avgEndgameClimb += parseInt(match.climb);
@@ -65,6 +72,14 @@ class ScoutingData {
                 stats.shooterMechanisms[match.shooterMechanism] = 0;
             }
             stats.shooterMechanisms[match.shooterMechanism]++;
+
+            // Track hood adjustable
+            if (match.hoodAdjustable) {
+                if (!stats.hoodAdjustable[match.hoodAdjustable]) {
+                    stats.hoodAdjustable[match.hoodAdjustable] = 0;
+                }
+                stats.hoodAdjustable[match.hoodAdjustable]++;
+            }
 
             // Calculate approximate points (2026 scoring)
             const points =
@@ -77,7 +92,10 @@ class ScoutingData {
 
         const count = matches.length;
         stats.avgAutoFuel = (stats.avgAutoFuel / count).toFixed(1);
+        stats.avgAutoCycleTime = (stats.avgAutoCycleTime / count).toFixed(1);
         stats.avgTeleopFuel = (stats.avgTeleopFuel / count).toFixed(1);
+        stats.avgTeleopCycleTime = (stats.avgTeleopCycleTime / count).toFixed(1);
+        stats.avgTeleopFuelRate = (stats.avgTeleopFuelRate / count).toFixed(2);
         stats.avgFuelCapacity = (stats.avgFuelCapacity / count).toFixed(1);
         stats.avgAutoClimb = (stats.avgAutoClimb / count).toFixed(1);
         stats.avgEndgameClimb = (stats.avgEndgameClimb / count).toFixed(1);
@@ -88,6 +106,15 @@ class ScoutingData {
         stats.primaryShooter = Object.keys(stats.shooterMechanisms).reduce((a, b) =>
             stats.shooterMechanisms[a] > stats.shooterMechanisms[b] ? a : b
         );
+
+        // Find most common hood adjustable setting
+        if (Object.keys(stats.hoodAdjustable).length > 0) {
+            stats.primaryHoodAdjustable = Object.keys(stats.hoodAdjustable).reduce((a, b) =>
+                stats.hoodAdjustable[a] > stats.hoodAdjustable[b] ? a : b
+            );
+        } else {
+            stats.primaryHoodAdjustable = 'N/A';
+        }
 
         return stats;
     }
@@ -164,10 +191,14 @@ document.getElementById('scout-form').addEventListener('submit', (e) => {
         alliance: document.getElementById('alliance').value,
         position: document.getElementById('position').value,
         autoFuelScored: parseInt(document.getElementById('auto-fuel-scored').value),
+        autoCycleTime: parseFloat(document.getElementById('auto-cycle-time').value),
         autoTowerClimb: document.getElementById('auto-tower-climb').value,
         teleopFuelScored: parseInt(document.getElementById('teleop-fuel-scored').value),
+        teleopCycleTime: parseFloat(document.getElementById('teleop-cycle-time').value),
+        teleopFuelRate: parseFloat(document.getElementById('teleop-fuel-rate').value),
         fuelCapacity: parseInt(document.getElementById('fuel-capacity').value),
         shooterMechanism: document.getElementById('shooter-mechanism').value,
+        hoodAdjustable: document.getElementById('hood-adjustable').value,
         climb: document.getElementById('climb').value,
         defense: document.getElementById('defense').value,
         notes: document.getElementById('notes').value
@@ -259,8 +290,20 @@ function showTeamDetail(teamNumber) {
             <span class="metric-value">${stats.avgAutoFuel}</span>
         </div>
         <div class="metric">
+            <span class="metric-name">Auto Cycle</span>
+            <span class="metric-value">${stats.avgAutoCycleTime}s</span>
+        </div>
+        <div class="metric">
             <span class="metric-name">Teleop Fuel</span>
             <span class="metric-value">${stats.avgTeleopFuel}</span>
+        </div>
+        <div class="metric">
+            <span class="metric-name">Teleop Cycle</span>
+            <span class="metric-value">${stats.avgTeleopCycleTime}s</span>
+        </div>
+        <div class="metric">
+            <span class="metric-name">Fuel/Sec</span>
+            <span class="metric-value">${stats.avgTeleopFuelRate}</span>
         </div>
         <div class="metric">
             <span class="metric-name">Fuel Capacity</span>
@@ -291,6 +334,10 @@ function showTeamDetail(teamNumber) {
             <span class="metric-value">${stats.primaryShooter}</span>
         </div>
         <div class="metric">
+            <span class="metric-name">Hood Adjustable</span>
+            <span class="metric-value">${stats.primaryHoodAdjustable}</span>
+        </div>
+        <div class="metric">
             <span class="metric-name">Defense Rating</span>
             <span class="metric-value">${stats.avgDefense}/5</span>
         </div>
@@ -304,9 +351,9 @@ function showTeamDetail(teamNumber) {
                 <span style="color: ${match.alliance === 'Red' ? '#ef4444' : '#3b82f6'}">${match.alliance} Alliance - Pos ${match.position}</span>
             </div>
             <div class="match-details">
-                <div>Auto: ${match.autoFuelScored} fuel, Climb ${match.autoTowerClimb}</div>
-                <div>Teleop: ${match.teleopFuelScored} fuel, Cap ${match.fuelCapacity}</div>
-                <div>Shooter: ${match.shooterMechanism}</div>
+                <div>Auto: ${match.autoFuelScored} fuel (${match.autoCycleTime || 0}s), Climb ${match.autoTowerClimb}</div>
+                <div>Teleop: ${match.teleopFuelScored} fuel (${match.teleopCycleTime || 0}s, ${match.teleopFuelRate || 0}/s)</div>
+                <div>Cap ${match.fuelCapacity}, Shooter: ${match.shooterMechanism}, Hood: ${match.hoodAdjustable || 'N/A'}</div>
                 <div>Endgame Climb: ${match.climb}</div>
                 <div>Defense: ${match.defense}/5</div>
             </div>
