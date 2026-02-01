@@ -4,233 +4,300 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Match Scout #6431</title>
-    <meta name="description"
-        content="FIRST Robotics Competition match scouting system for tracking team performance and analytics">
+    <title>FRC Scouting'26 .)</title>
+    <meta name="description" content="FIRST Robotics Competition match scouting system">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Courier+Prime:wght@400;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+    <!-- LOGIN MODAL -->
+    <div id="login-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2>>> IDENTITY VERIFICATION</h2>
+                <p>Enter Team Identity Protocol</p>
+            </div>
+            <form id="login-form">
+                <div class="form-group mb-3">
+                    <label for="scout-team-number">Operative Team Code</label>
+                    <input type="number" id="scout-team-number" required min="1" max="9999" placeholder="6431">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Initialize Link</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- HUD Header -->
     <header>
         <div class="header-content">
             <div class="logo">
-                <h1><span class="title-text">#6431 Match Scout</span></h1>
+                <h1>FRC Scouting'26 <span style="color:var(--neon-orange)">.)</span></h1>
             </div>
             <nav>
-                <button class="nav-btn active" data-view="scout">Scout Match</button>
-                <button class="nav-btn" data-view="teams">Teams</button>
-                <button class="nav-btn" data-view="analytics">Analytics</button>
+                <button class="nav-btn active" data-view="scout">MATCH OPS</button>
+                <button class="nav-btn" data-view="teams">DATA BANK</button>
+                <button class="nav-btn" data-view="analytics">ANALYTICS</button>
             </nav>
         </div>
     </header>
+
     <div class="container">
         <!-- SCOUT VIEW -->
         <div id="scout-view" class="view active">
             <div class="card">
-                <h2>Scout a Match - Select Robot Position</h2>
+                <h2>>> TARGET ACQUISITION</h2>
 
                 <!-- Field Selection -->
                 <div id="field-selection">
                     <div class="field-container">
-                        <img src="field.png" alt="FRC 2026 Field" class="field-image">
+                        <img src="field.png" alt="FRC 2026 Field" class="field-image"
+                            style="width:100%; display:block; opacity: 0.8;">
                         <div class="field-overlay">
                             <!-- Red Alliance Positions -->
-                            <div class="position-marker red-pos-1" data-alliance="Red" data-position="1">
-                                <span class="position-label">R1</span>
-                            </div>
-                            <div class="position-marker red-pos-2" data-alliance="Red" data-position="2">
-                                <span class="position-label">R2</span>
-                            </div>
-                            <div class="position-marker red-pos-3" data-alliance="Red" data-position="3">
-                                <span class="position-label">R3</span>
-                            </div>
+                            <div class="position-marker red-pos-1" data-alliance="Red" data-position="1">R1</div>
+                            <div class="position-marker red-pos-2" data-alliance="Red" data-position="2">R2</div>
+                            <div class="position-marker red-pos-3" data-alliance="Red" data-position="3">R3</div>
 
                             <!-- Blue Alliance Positions -->
-                            <div class="position-marker blue-pos-1" data-alliance="Blue" data-position="1">
-                                <span class="position-label">B1</span>
-                            </div>
-                            <div class="position-marker blue-pos-2" data-alliance="Blue" data-position="2">
-                                <span class="position-label">B2</span>
-                            </div>
-                            <div class="position-marker blue-pos-3" data-alliance="Blue" data-position="3">
-                                <span class="position-label">B3</span>
-                            </div>
+                            <div class="position-marker blue-pos-1" data-alliance="Blue" data-position="1">B1</div>
+                            <div class="position-marker blue-pos-2" data-alliance="Blue" data-position="2">B2</div>
+                            <div class="position-marker blue-pos-3" data-alliance="Blue" data-position="3">B3</div>
                         </div>
                     </div>
-                    <p class="field-instruction">Click on a robot starting position to begin scouting</p>
+                    <p class="field-instruction">[ SELECT ROBOT STARTING POINT ]</p>
                 </div>
 
                 <!-- Scouting Form (hidden initially) -->
                 <div id="scouting-form-container" class="hidden">
-                    <button id="back-to-field" class="btn btn-secondary mb-3">← Back to Field</button>
-                    <form id="scout-form">
-                        <!-- Match Info -->
-                        <div class="form-section">
-                            <h3>Match Information</h3>
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label for="team-number">Team Number *</label>
-                                    <input type="number" id="team-number" required min="1" max="9999">
-                                </div>
-                                <div class="form-group">
-                                    <label for="match-number">Match Number *</label>
-                                    <input type="text" id="match-number" required placeholder="Q1, SF2, F1">
-                                </div>
-                                <div class="form-group">
-                                    <label>Alliance & Position</label>
-                                    <input type="text" id="alliance-display" readonly>
-                                    <input type="hidden" id="alliance">
-                                    <input type="hidden" id="position">
-                                </div>
-                            </div>
-                        </div>
+                    <button id="back-to-field" class="btn btn-secondary mb-3">
+                        << RE-ACQUIRE TARGET</button>
+                            <form id="scout-form">
 
-                        <!-- Auto Period -->
-                        <div class="form-section">
-                            <h3>Autonomous Period</h3>
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label for="auto-fuel-scored">Aprox. Fuel Scored in Hub</label>
-                                    <input type="number" id="auto-fuel-scored" min="0" value="0">
+                                <!-- Match Info -->
+                                <div class="form-section mb-3">
+                                    <h3>// MISSION PARAMETERS</h3>
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label for="team-number">Target Team ID *</label>
+                                            <input type="number" id="team-number" required min="1" max="9999">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="match-number">Match Sequence *</label>
+                                            <input type="text" id="match-number" required placeholder="Q1, SF2...">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Alliance Assignment</label>
+                                            <input type="text" id="alliance-display" readonly
+                                                style="color: var(--neon-orange)">
+                                            <input type="hidden" id="alliance">
+                                            <input type="hidden" id="position">
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="form-group">
-                                    <label for="auto-cycle-time">Cycle Time (seconds)</label>
-                                    <input type="number" id="auto-cycle-time" min="0" step="0.1" value="0"
-                                        placeholder="Time per cycle">
-                                </div>
-                                <div class="form-group">
-                                    <label for="auto-tower-climb">Tower Climb Level</label>
-                                    <select id="auto-tower-climb">
-                                        <option value="0">0 - No Climb</option>
-                                        <option value="1">1 - Level 1</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
 
-                        <!-- Teleop Period -->
-                        <div class="form-section">
-                            <h3>Teleoperated Period</h3>
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label for="teleop-fuel-scored">Aprox. Fuel Scored in Hub</label>
-                                    <input type="number" id="teleop-fuel-scored" min="0" value="0">
+                                <!-- Auto Period -->
+                                <div class="form-section mb-3">
+                                    <h3>// AUTONOMOUS PHASE</h3>
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label for="auto-fuel-scored">Fuel Deposited</label>
+                                            <input type="number" id="auto-fuel-scored" min="0" value="0">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="auto-cycle-time">Cycle Duration (sec)</label>
+                                            <input type="number" id="auto-cycle-time" min="0" step="0.1" value="0">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="auto-tower-climb">Vertical Ascend (Auto)</label>
+                                            <select id="auto-tower-climb">
+                                                <option value="0">Level 0 - None</option>
+                                                <option value="1">Level 1 - Low</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="form-group">
-                                    <label for="teleop-cycle-time">Cycle Time (seconds)</label>
-                                    <input type="number" id="teleop-cycle-time" min="0" step="0.1" value="0"
-                                        placeholder="Avg cycle time">
-                                </div>
-                                <div class="form-group">
-                                    <label for="teleop-fuel-rate">Fuel Scored per Second</label>
-                                    <input type="number" id="teleop-fuel-rate" min="0" step="0.01" value="0"
-                                        placeholder="Calculated rate">
-                                </div>
-                                <div class="form-group">
-                                    <label for="fuel-capacity">Aprox. Fuel Capacity</label>
-                                    <input type="number" id="fuel-capacity" min="0" value="0"
-                                        placeholder="Max fuel held">
-                                </div>
-                                <div class="form-group">
-                                    <label for="shooter-mechanism">Shooter Mechanism *</label>
-                                    <select id="shooter-mechanism" required>
-                                        <option value="">Select...</option>
-                                        <option value="Spindexter">Spindexter</option>
-                                        <option value="Turret">Turret</option>
-                                        <option value="Shooter">Shooter</option>
-                                        <option value="None">None</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="hood-adjustable">Hood Adjustable *</label>
-                                    <select id="hood-adjustable" required>
-                                        <option value="">Select...</option>
-                                        <option value="Yes">Yes</option>
-                                        <option value="No">No</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
 
-                        <!-- Endgame -->
-                        <div class="form-section">
-                            <h3>Endgame</h3>
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label for="climb">Tower Climb Level</label>
-                                    <select id="climb">
-                                        <option value="0">0 - No Climb</option>
-                                        <option value="1">1 - Level 1</option>
-                                        <option value="2">2 - Level 2</option>
-                                        <option value="3">3 - Level 3</option>
-                                    </select>
+                                <!-- Teleop Period -->
+                                <div class="form-section mb-3">
+                                    <h3>// TELEOPERATED PHASE</h3>
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label for="chassis-type">Chassis Config *</label>
+                                            <select id="chassis-type" required>
+                                                <option value="">[ SELECT TYPE ]</option>
+                                                <option value="Tank">Tank</option>
+                                                <option value="Swerve">Swerve</option>
+                                                <option value="Mecanum">Mecanum</option>
+                                                <option value="Other">Custom/Other</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="teleop-fuel-scored">Fuel Deposited</label>
+                                            <input type="number" id="teleop-fuel-scored" min="0" value="0">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="teleop-cycle-time">Cycle Duration (sec)</label>
+                                            <input type="number" id="teleop-cycle-time" min="0" step="0.1" value="0">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="teleop-fuel-rate">Flow Rate (Fuel/Sec)</label>
+                                            <input type="number" id="teleop-fuel-rate" min="0" step="0.01" value="0">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="fuel-capacity">Storage Capacity</label>
+                                            <input type="number" id="fuel-capacity" min="0" value="0">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="shooter-mechanism">Ballistics System *</label>
+                                            <select id="shooter-mechanism" required>
+                                                <option value="">[ SELECT SYSTEM ]</option>
+                                                <option value="Spindexter">Spindexter</option>
+                                                <option value="Turret">Turret</option>
+                                                <option value="Shooter">Fixed Shooter</option>
+                                                <option value="None">None</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="hood-adjustable">Variable Trajectory *</label>
+                                            <select id="hood-adjustable" required>
+                                                <option value="">[ STATUS ]</option>
+                                                <option value="Yes">Operational (Yes)</option>
+                                                <option value="No">Static (No)</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="form-group">
-                                    <label for="defense">Defense Rating</label>
-                                    <select id="defense">
-                                        <option value="0">0 - No Defense</option>
-                                        <option value="1">1 - Poor</option>
-                                        <option value="2">2 - Below Average</option>
-                                        <option value="3">3 - Average</option>
-                                        <option value="4">4 - Good</option>
-                                        <option value="5">5 - Excellent</option>
-                                    </select>
+
+                                <!-- Endgame -->
+                                <div class="form-section mb-3">
+                                    <h3>// ENDGAME SEQUENCE</h3>
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label for="climb">Ascension Level</label>
+                                            <select id="climb">
+                                                <option value="0">Level 0 - Ground</option>
+                                                <option value="1">Level 1 - Low</option>
+                                                <option value="2">Level 2 - Mid</option>
+                                                <option value="3">Level 3 - High</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="defense">Combat Rating (Defense)</label>
+                                            <select id="defense">
+                                                <option value="0">0 - Pacifist</option>
+                                                <option value="1">1 - Minimal</option>
+                                                <option value="2">2 - Weak</option>
+                                                <option value="3">3 - Standard</option>
+                                                <option value="4">4 - High Impact</option>
+                                                <option value="5">5 - Dominant</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <!-- Notes -->
-                        <div class="form-section">
-                            <h3>Additional Notes</h3>
-                            <div class="form-group">
-                                <label for="notes">Observations</label>
-                                <textarea id="notes"
-                                    placeholder="Robot reliability, driver skill, strategy notes, mechanical issues, etc."></textarea>
-                            </div>
-                        </div>
+                                <!-- Notes -->
+                                <div class="form-section mb-3">
+                                    <h3>// STRATEGIC INTEL</h3>
+                                    <div class="form-group">
+                                        <label for="notes">Field Observations</label>
+                                        <textarea id="notes"
+                                            placeholder="Performance anomalies, driver capability, mechanical failures..."></textarea>
+                                    </div>
+                                </div>
 
-                        <button type="submit" class="btn btn-primary">Save Match Data</button>
-                    </form>
+                                <button type="submit" class="btn btn-primary w-100">>> UPLOAD DATA PACKET</button>
+                            </form>
                 </div>
             </div>
         </div>
 
         <!-- TEAMS VIEW -->
         <div id="teams-view" class="view">
-            <h2>Scouted Teams</h2>
-            <div id="teams-container" class="teams-grid">
-                <!-- Teams will be dynamically inserted here -->
-            </div>
-            <div id="team-detail" class="hidden">
-                <button id="back-to-teams" class="btn btn-secondary mb-3">← Back to Teams</button>
-                <div class="card">
-                    <h2 id="detail-team-number"></h2>
-                    <div class="analytics-grid">
-                        <div class="analytics-card">
-                            <h3>Average Scores</h3>
-                            <div id="detail-averages"></div>
-                        </div>
-                        <div class="analytics-card">
-                            <h3>Performance Summary</h3>
-                            <div id="detail-summary"></div>
-                        </div>
-                    </div>
-                    <div class="card mt-3">
-                        <h3>Match History</h3>
-                        <div id="detail-matches" class="match-list"></div>
-                    </div>
+            <div class="card">
+                <h2>>> TEAM DATABASE</h2>
+                <div id="teams-container" class="teams-grid">
+                    <!-- Teams inserted via JS -->
+                </div>
+
+                <div id="team-detail" class="hidden">
+                    <button id="back-to-teams" class="btn btn-secondary mb-3">
+                        << BACK TO INDEX</button>
+                            <div class="card" style="border-color: var(--neon-orange);">
+                                <h2 id="detail-team-number">TEAM ####</h2>
+                                <div class="analytics-grid form-grid">
+                                    <div class="analytics-card">
+                                        <h3>Performance Metrics</h3>
+                                        <div id="detail-averages"></div>
+                                    </div>
+                                    <div class="analytics-card">
+                                        <h3>Tactical Summary</h3>
+                                        <div id="detail-summary"></div>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <h3>Match Log</h3>
+                                    <div id="detail-matches" class="match-list"></div>
+                                </div>
+                            </div>
                 </div>
             </div>
         </div>
 
         <!-- ANALYTICS VIEW -->
         <div id="analytics-view" class="view">
-            <h2>Analytics Dashboard</h2>
-            <div id="analytics-container">
-                <!-- Analytics will be dynamically inserted here -->
+            <div class="card">
+                <h2>>> ANALYTICS ENGINE</h2>
+
+                <div class="tabs mb-3" style="display:flex; gap:10px; margin-bottom:2rem;">
+                    <button class="btn btn-secondary tab-btn active" data-tab="my-team">MY STATS</button>
+                    <button class="btn btn-secondary tab-btn" data-tab="event-stats">GLOBAL DATA</button>
+                    <button class="btn btn-secondary tab-btn" data-tab="data-manage">SYSTEM</button>
+                </div>
+
+                <!-- TAB: MY TEAM -->
+                <div id="analytics-my-team" class="analytics-tab-content active">
+                    <div id="my-team-container"></div>
+                </div>
+
+                <!-- TAB: EVENT STATS -->
+                <div id="analytics-event-stats" class="analytics-tab-content hidden">
+                    <div id="analytics-container"></div>
+                </div>
+
+                <!-- TAB: DATA MANAGEMENT -->
+                <div id="analytics-data-manage" class="analytics-tab-content hidden">
+                    <div class="card" style="border: 1px dashed var(--neon-cyan);">
+                        <h3>File System Operations</h3>
+                        <p style="color:#94a3b8; margin-bottom: 2rem;">Manage local datastore. Backup regularly.</p>
+
+                        <div class="form-section mt-3">
+                            <h4 style="color:var(--neon-green)">>> EXPORT PROTOCOL</h4>
+                            <p class="mb-1">Generate JSON packet.</p>
+                            <button id="export-data-btn" class="btn btn-primary">DOWNLOAD DATA</button>
+                        </div>
+
+                        <div class="form-section mt-3">
+                            <h4 style="color:var(--neon-cyan)">>> IMPORT PROTOCOL</h4>
+                            <p class="mb-1">Merge external datastream.</p>
+                            <div class="form-input mb-1">
+                                <input type="file" id="import-file" accept=".json">
+                            </div>
+                            <button id="import-data-btn" class="btn btn-secondary">INITIATE MERGE</button>
+                        </div>
+
+                        <div class="form-section mt-3">
+                            <h4 style="color:var(--neon-red)">>> PURGE PROTOCOL</h4>
+                            <p class="mb-1">Irreversible data deletion.</p>
+                            <button id="clear-data-btn" class="btn" style="border:1px solid red; color:red;">EXECUTE
+                                PURGE</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
