@@ -14,11 +14,73 @@ class ScoutingData {
     }
 
     addMatch(matchData) {
+        // Add scout attribution
+        const scoutTeam = localStorage.getItem('scoutTeam') || 'Unknown';
+
         this.matches.push({
             ...matchData,
+            scoutTeam: scoutTeam,
             timestamp: new Date().toISOString()
         });
         this.saveData();
+    }
+
+    exportData() {
+        const dataStr = JSON.stringify(this.matches, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `frc_scouting_data_${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    importData(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedMatches = JSON.parse(e.target.result);
+                    if (!Array.isArray(importedMatches)) {
+                        reject('Invalid data format: Expected an array of matches');
+                        return;
+                    }
+
+                    // Simple merge: add unique matches based on timestamp + match + team
+                    let added = 0;
+                    importedMatches.forEach(newMatch => {
+                        const exists = this.matches.some(m =>
+                            m.matchNumber === newMatch.matchNumber &&
+                            m.teamNumber === newMatch.teamNumber &&
+                            m.scoutTeam === newMatch.scoutTeam
+                        );
+
+                        if (!exists) {
+                            this.matches.push(newMatch);
+                            added++;
+                        }
+                    });
+
+                    this.saveData();
+                    resolve(added);
+                } catch (err) {
+                    reject('Error parsing JSON file');
+                }
+            };
+            reader.readAsText(file);
+        });
+    }
+
+    clearData() {
+        if (confirm('Are you sure you want to delete ALL scouting data? This cannot be undone.')) {
+            this.matches = [];
+            this.saveData();
+            location.reload();
+        }
     }
 
     getTeamMatches(teamNumber) {
@@ -53,7 +115,8 @@ class ScoutingData {
             avgDefense: 0,
             totalPoints: 0,
             shooterMechanisms: {},
-            hoodAdjustable: {}
+            hoodAdjustable: {},
+            chassisTypes: {}
         };
 
         matches.forEach(match => {
@@ -68,10 +131,12 @@ class ScoutingData {
             stats.avgDefense += parseInt(match.defense);
 
             // Track shooter mechanisms
-            if (!stats.shooterMechanisms[match.shooterMechanism]) {
-                stats.shooterMechanisms[match.shooterMechanism] = 0;
+            if (match.shooterMechanism) {
+                if (!stats.shooterMechanisms[match.shooterMechanism]) {
+                    stats.shooterMechanisms[match.shooterMechanism] = 0;
+                }
+                stats.shooterMechanisms[match.shooterMechanism]++;
             }
-            stats.shooterMechanisms[match.shooterMechanism]++;
 
             // Track hood adjustable
             if (match.hoodAdjustable) {
@@ -79,6 +144,14 @@ class ScoutingData {
                     stats.hoodAdjustable[match.hoodAdjustable] = 0;
                 }
                 stats.hoodAdjustable[match.hoodAdjustable]++;
+            }
+
+            // Track chassis type
+            if (match.chassisType) {
+                if (!stats.chassisTypes[match.chassisType]) {
+                    stats.chassisTypes[match.chassisType] = 0;
+                }
+                stats.chassisTypes[match.chassisType]++;
             }
 
             // Calculate approximate points (2026 scoring)
@@ -102,19 +175,15 @@ class ScoutingData {
         stats.avgDefense = (stats.avgDefense / count).toFixed(1);
         stats.avgPoints = (stats.totalPoints / count).toFixed(1);
 
-        // Find most common shooter mechanism
-        stats.primaryShooter = Object.keys(stats.shooterMechanisms).reduce((a, b) =>
-            stats.shooterMechanisms[a] > stats.shooterMechanisms[b] ? a : b
-        );
+        // Helper to find most common item
+        const getMostCommon = (obj) => {
+            if (Object.keys(obj).length === 0) return 'N/A';
+            return Object.keys(obj).reduce((a, b) => obj[a] > obj[b] ? a : b);
+        };
 
-        // Find most common hood adjustable setting
-        if (Object.keys(stats.hoodAdjustable).length > 0) {
-            stats.primaryHoodAdjustable = Object.keys(stats.hoodAdjustable).reduce((a, b) =>
-                stats.hoodAdjustable[a] > stats.hoodAdjustable[b] ? a : b
-            );
-        } else {
-            stats.primaryHoodAdjustable = 'N/A';
-        }
+        stats.primaryShooter = getMostCommon(stats.shooterMechanisms);
+        stats.primaryHoodAdjustable = getMostCommon(stats.hoodAdjustable);
+        stats.primaryChassis = getMostCommon(stats.chassisTypes);
 
         return stats;
     }
@@ -122,6 +191,29 @@ class ScoutingData {
 
 // ===== INITIALIZE =====
 const scoutingData = new ScoutingData();
+
+// ===== LOGIN MANAGEMENT =====
+function checkLogin() {
+    const userTeam = localStorage.getItem('frc-scout-team');
+    if (!userTeam) {
+        document.getElementById('login-modal').classList.add('active');
+    } else {
+        console.log(`Logged in as Team ${userTeam}`);
+    }
+}
+
+document.getElementById('login-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const teamNum = document.getElementById('scout-team-number').value;
+    if (teamNum) {
+        localStorage.setItem('frc-scout-team', teamNum);
+        document.getElementById('login-modal').classList.remove('active');
+        // Reload analytics if on that page
+        if (document.getElementById('analytics-view').classList.contains('active')) {
+            loadAnalyticsView();
+        }
+    }
+});
 
 // ===== VIEW MANAGEMENT =====
 function switchView(viewName) {
@@ -193,6 +285,7 @@ document.getElementById('scout-form').addEventListener('submit', (e) => {
         autoFuelScored: parseInt(document.getElementById('auto-fuel-scored').value),
         autoCycleTime: parseFloat(document.getElementById('auto-cycle-time').value),
         autoTowerClimb: document.getElementById('auto-tower-climb').value,
+        chassisType: document.getElementById('chassis-type').value,
         teleopFuelScored: parseInt(document.getElementById('teleop-fuel-scored').value),
         teleopCycleTime: parseFloat(document.getElementById('teleop-cycle-time').value),
         teleopFuelRate: parseFloat(document.getElementById('teleop-fuel-rate').value),
@@ -259,8 +352,8 @@ function loadTeamsView() {
                         <div class="stat-value">${stats.avgEndgameClimb}</div>
                     </div>
                     <div class="stat">
-                        <div class="stat-label">Shooter</div>
-                        <div class="stat-value">${stats.primaryShooter}</div>
+                        <div class="stat-label">Chassis</div>
+                        <div class="stat-value" style="font-size: 1rem;">${stats.primaryChassis}</div>
                     </div>
                 </div>
             </div>
@@ -334,8 +427,8 @@ function showTeamDetail(teamNumber) {
             <span class="metric-value">${stats.primaryShooter}</span>
         </div>
         <div class="metric">
-            <span class="metric-name">Hood Adjustable</span>
-            <span class="metric-value">${stats.primaryHoodAdjustable}</span>
+            <span class="metric-name">Chassis Type</span>
+            <span class="metric-value">${stats.primaryChassis}</span>
         </div>
         <div class="metric">
             <span class="metric-name">Defense Rating</span>
@@ -353,7 +446,7 @@ function showTeamDetail(teamNumber) {
             <div class="match-details">
                 <div>Auto: ${match.autoFuelScored} fuel (${match.autoCycleTime || 0}s), Climb ${match.autoTowerClimb}</div>
                 <div>Teleop: ${match.teleopFuelScored} fuel (${match.teleopCycleTime || 0}s, ${match.teleopFuelRate || 0}/s)</div>
-                <div>Cap ${match.fuelCapacity}, Shooter: ${match.shooterMechanism}, Hood: ${match.hoodAdjustable || 'N/A'}</div>
+                <div>${match.chassisType} Chassis, Cap ${match.fuelCapacity}, Shooter: ${match.shooterMechanism}</div>
                 <div>Endgame Climb: ${match.climb}</div>
                 <div>Defense: ${match.defense}/5</div>
             </div>
@@ -369,6 +462,68 @@ document.getElementById('back-to-teams').addEventListener('click', () => {
 
 // ===== ANALYTICS VIEW =====
 function loadAnalyticsView() {
+    // 1. Load Event Stats (Open Data)
+    loadEventStats();
+
+    // 2. Load My Team Analytics
+    const userTeam = localStorage.getItem('frc-scout-team');
+    if (userTeam) {
+        loadMyTeamAnalytics(parseInt(userTeam));
+    } else {
+        document.getElementById('my-team-container').innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">🔒</div>
+                <div class="empty-state-text">Team Not Set</div>
+                <p>Please log in with your team number to see custom analytics.</p>
+                <button class="btn btn-secondary mt-3" onclick="document.getElementById('login-modal').classList.add('active')">Set Team Number</button>
+            </div>
+        `;
+    }
+}
+
+// Analytics Tabs Logic
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Remove active class from all tabs
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.analytics-tab-content').forEach(c => c.classList.remove('active')); // Fixed class name reference
+        document.getElementById(`analytics-${btn.dataset.tab}`).classList.add('active'); // Wait, need to fix ID reference
+        // Wait, the tab logic in HTML was:
+        // tab-btn data-tab="my-team" -> id="analytics-my-team"
+        // tab-btn data-tab="event-stats" -> id="analytics-event-stats"
+
+        // Correct implementation:
+        btn.classList.add('active');
+        document.querySelectorAll('.analytics-tab-content').forEach(c => c.classList.add('hidden'));
+        document.querySelectorAll('.analytics-tab-content').forEach(c => c.classList.remove('active'));
+
+        const targetId = `analytics-${btn.dataset.tab}`;
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) {
+            targetEl.classList.remove('hidden');
+            targetEl.classList.add('active');
+        }
+    });
+});
+// Re-implementing cleaner tab logic since above attempt was messy in thought process
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.analytics-tab-content').forEach(c => {
+            c.classList.remove('active');
+            c.classList.add('hidden');
+        });
+
+        btn.classList.add('active');
+        const contentId = `analytics-${btn.dataset.tab}`;
+        const content = document.getElementById(contentId);
+        content.classList.remove('hidden');
+        content.classList.add('active');
+    });
+});
+
+
+function loadEventStats() {
     const container = document.getElementById('analytics-container');
     const teams = scoutingData.getAllTeams();
     const teamNumbers = Object.keys(teams);
@@ -377,8 +532,8 @@ function loadAnalyticsView() {
         container.innerHTML = `
             <div class="empty-state">
                 <div class="empty-state-icon">📈</div>
-                <div class="empty-state-text">No analytics available</div>
-                <p>Scout some matches to see analytics!</p>
+                <div class="empty-state-text">No data available</div>
+                <p>Scout some matches to see event statistics!</p>
             </div>
         `;
         return;
@@ -463,6 +618,98 @@ function loadAnalyticsView() {
     `;
 }
 
+function loadMyTeamAnalytics(teamNumber) {
+    const container = document.getElementById('my-team-container');
+    const stats = scoutingData.getTeamStats(teamNumber);
+
+    // Get overall scouting stats
+    const totalMatches = scoutingData.matches.length;
+
+    // Build the Scouting Activity section
+    let html = `
+        <div class="card mb-3">
+            <h2>Scouting Contributions</h2>
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <h3>Your Activity</h3>
+                    <div class="metric">
+                        <span class="metric-name">Total Matches Scouted</span>
+                        <span class="metric-value">${totalMatches}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <h3>Scouting History</h3>
+                <div class="match-list">
+                    ${scoutingData.matches.slice().reverse().map(match => `
+                        <div class="match-item">
+                            <div class="match-header">
+                                <span class="match-number">Match ${match.matchNumber}</span>
+                                <span style="color: ${match.alliance === 'Red' ? '#ef4444' : '#3b82f6'}">
+                                    Team ${match.teamNumber} (${match.alliance} - ${match.position})
+                                </span>
+                            </div>
+                            <div class="match-details">
+                                <div>Auto: ${match.autoFuelScored} fuel, Climb ${match.autoTowerClimb}</div>
+                                <div>Teleop: ${match.teleopFuelScored} fuel</div>
+                                <div>Endgame: Climb ${match.climb}</div>
+                                <div>Defense: ${match.defense}/5</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+
+    if (!stats) {
+        html += `
+            <div class="empty-state">
+                <div class="empty-state-icon">❓</div>
+                <div class="empty-state-text">No Performance Data for Team ${teamNumber}</div>
+                <p>We haven't scouted any matches for your team yet.</p>
+            </div>
+        `;
+    } else {
+        html += `
+            <div class="card mb-3">
+                <h2>Your Team: ${teamNumber} Performance</h2>
+                <div class="analytics-grid">
+                    <div class="analytics-card">
+                        <h3>Summary</h3>
+                        <div class="metric">
+                            <span class="metric-name">Matches Played</span>
+                            <span class="metric-value">${stats.matchCount}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-name">Avg Points</span>
+                            <span class="metric-value">${stats.avgPoints}</span>
+                        </div>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>Strengths</h3>
+                        <div class="metric">
+                            <span class="metric-name">Avg Teleop Fuel</span>
+                            <span class="metric-value">${stats.avgTeleopFuel}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-name">Endgame Climb</span>
+                            <span class="metric-value">${stats.avgEndgameClimb}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-name">Chassis</span>
+                            <span class="metric-value">${stats.primaryChassis}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    container.innerHTML = html;
+}
+
 // ===== KEYBOARD SHORTCUTS =====
 document.addEventListener('keydown', (e) => {
     // Alt+1/2/3 to switch views
@@ -476,3 +723,4 @@ document.addEventListener('keydown', (e) => {
 // ===== INITIALIZE ON LOAD =====
 console.log('FRC 2026 REBUILT Scouting System Loaded');
 console.log(`${scoutingData.matches.length} matches in database`);
+checkLogin();
