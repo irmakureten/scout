@@ -50,7 +50,7 @@
         <!-- SCOUT VIEW -->
         <div id="scout-view" class="view active">
             <div class="card">
-                <h2>>> TARGET ACQUISITION</h2>
+                <h2>>> TARGET ROBOT</h2>
 
                 <!-- Field Selection -->
                 <div id="field-selection">
@@ -80,18 +80,18 @@
 
                                 <!-- Match Info -->
                                 <div class="form-section mb-3">
-                                    <h3>// MISSION PARAMETERS</h3>
+                                    <h3>// ROBOT</h3>
                                     <div class="form-grid">
                                         <div class="form-group">
-                                            <label for="team-number">Target Team ID *</label>
-                                            <input type="number" id="team-number" required min="1" max="9999">
+                                            <label for="team-number">Target Team Number *</label>
+                                            <input type="number" id="team-number" required min="1" max="13000">
                                         </div>
                                         <div class="form-group">
-                                            <label for="match-number">Match Sequence *</label>
+                                            <label for="match-number">Match Number *</label>
                                             <input type="text" id="match-number" required placeholder="Q1, SF2...">
                                         </div>
                                         <div class="form-group">
-                                            <label>Alliance Assignment</label>
+                                            <label>Alliance</label>
                                             <input type="text" id="alliance-display" readonly
                                                 style="color: var(--neon-orange)">
                                             <input type="hidden" id="alliance">
